@@ -4,14 +4,19 @@ import statistics as stats
 from colorama import Fore
 
 ########## Isochron age method ##########
+# In the future I plant to separate this into multiple files so
+# it's an actual library and clean and pretty and easy to use, 
+# but for now it works.
+########## #################### ##########
 
+# Global vars and decay constants go here
 Rb_lambda = 1.42e-11
 
 # Simple partial derivative error propogation
-def propogate_uncertainty(slope, slope_uncertainty):
+def propogate_uncertainty(slope, slope_uncertainty, decay_const):
     # Partial derivative w/ respect to slope
     slope_uncertainty_squared = slope_uncertainty**2
-    partial_derivative_squared_slope = (1 / (Rb_lambda * (slope + 1)))**2
+    partial_derivative_squared_slope = (1 / (decay_const * (slope + 1)))**2
 
         
     return math.sqrt(slope_uncertainty_squared * partial_derivative_squared_slope) / 1e6
@@ -23,7 +28,7 @@ def compute_age(slope, slope_uncertainty):
         raise Exceptions("Illigal slope argument")
     age = ((math.log(1 + slope)) / (Rb_lambda)) / 1e6
     
-    age_uncertainty = propogate_uncertainty(slope, slope_uncertainty)
+    age_uncertainty = propogate_uncertainty(slope, slope_uncertainty, Rb_lambda)
     
     return age, age_uncertainty
 
@@ -31,16 +36,16 @@ def compute_age(slope, slope_uncertainty):
 ########## York-Fit complete regression code ##########
 
 def Compute_MSWD(x, y, x_unsc, y_unsc, a, b, Z_array):
+    # Any MSWD method will work
     term = 0
     for i in range(len(x)):
         # MSWD_numerator = (y[i] - a - (b*x[i]))**2
         # MSWD_denominator = (y_unsc[i]**2) + ((b**2) * (x_unsc[i]**2))
         # term = term + (MSWD_numerator / MSWD_denominator)
         term = term + (Z_array[i]*((y[i] - (b*x[i]) - a)**2))
-    print(term)
     return term
 
-# calculate uncertainties Here
+# calculate uncertainties of fit params here
 def computeUncertanties(alpha_array, Z_array, X_m, Y_m, U_array, V_array, x_weights, y_weights, r, b, a, MSWD_term, x, y):
     # Vars for convenience and other stuff from lecture that I don't end up using
     iterator = len(alpha_array)
@@ -72,7 +77,7 @@ def computeUncertanties(alpha_array, Z_array, X_m, Y_m, U_array, V_array, x_weig
     y_m = numerator / denominator
         
     # The actual uncertainties -- I use the method from Faure and Mensing, had lots of problems w/ the lecture slides.
-    # Like, i'm sure thier right, but I just couln't seem to figure out the code
+    # Like, i'm sure theyre right, but I just couln't seem to figure out the code
     b_unsc_denom = 0
     a_unsc_denom = 0
     a_unsc_numer = 0
@@ -103,7 +108,7 @@ def York_Fit(x, y, x_unsc, y_unsc, binitial, iterator):
     ratios = []
     slopes = []
     
-    # The meat
+    # Iterate to find the best fitting slope
     while(b != york_guess):
         
         # Preprocess the passed data and retrieve necessary arrays
@@ -156,7 +161,7 @@ def preproccess(x, y, x_unsc, y_unsc, b):
     # Just for convenience
     iterable = len(x)
     
-    # Define the weighting facors -- Consider that Python treats np.array as a hash table or perhaps a LL
+    # Define the weighting facors
     x_stdev, y_stdev = stats.stdev(x), stats.stdev(y)
     x_weights, y_weights = [], []
     for i in range(iterable):
