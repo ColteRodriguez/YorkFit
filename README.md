@@ -1,2 +1,2 @@
 # YorkFit
-Unclean, unoptimized code, for personal use or reference purposes
+A simple Implementation of the York (1969) linear regression accounting for 2-axis uncertainty. Additionally includes options for Isochron plotting and age calculations w/ propagated uncertainty
